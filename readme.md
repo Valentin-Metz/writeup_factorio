@@ -35,7 +35,9 @@ The bug lies within the way this number of bytes to allocate is computed. Becaus
 the number is cast to a 32-bit integer we can enter a number such that this value
 gets too small (and thus we will be able to overwrite a whole bunch of stuff on the heap)
 
-Namely this will always give us an overflow of (a multiple of) 4gb, sadly this means that
+Namely this will always give us an overflow of (a multiple of) 4gb. 
+However since we only read 4 bytes as size the only way we will overflow if this is 
+exactly one byte short of 4 gigabyte. Sadly this means that
 the mapfile also needs to be this big, else the mapdeserializer will complain that
 there simply is not enough data to even attempt deserialization.
 
