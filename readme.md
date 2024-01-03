@@ -27,7 +27,7 @@ into level loading code until I found the part which loads property-trees from
 maps, again it seems sane in that it always tries to allocate enough memory for 
 the entire data part.
 
-![Screenshot of IDA with the line containing the bug being highlighted](/imgs/bug.png)
+![Screenshot of IDA with the line containing the bug being highlighted](/img/bug.png)
 
 ## The bug
 
@@ -44,7 +44,7 @@ project, which first checks if the size to allocate is zero, if yes it will set 
 (e.g. no allocation will return nullptr), then it will go into a while true to try
 and allocate with malloc and then the `std::get_new_handler` way.
 
-![Screenshot of the new handler in IDA](/imgs/newhandler.png)
+![Screenshot of the new handler in IDA](/img/newhandler.png)
 
 ## The exploit:
 If we inspect the factorio binary with `checksec`, we get the following:
