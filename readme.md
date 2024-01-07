@@ -27,7 +27,7 @@ into level loading code until I found the part which loads property-trees from
 maps, again it seems sane in that it always tries to allocate enough memory for 
 the entire data part.
 
-![Screenshot of IDA with the line containing the bug being highlighted](/img/bug.png)
+![Screenshot of IDA with the line containing the bug being highlighted](img/bug.png)
 
 ## The bug
 
@@ -46,18 +46,28 @@ project, which first checks if the size to allocate is zero, if yes it will set 
 (e.g. no allocation will return nullptr), then it will go into a while true to try
 and allocate with malloc and then the `std::get_new_handler` way.
 
-![Screenshot of the new handler in IDA](/img/newhandler.png)
+![Screenshot of the new handler in IDA](img/newhandler.png)
 
 ## The exploit:
 If we inspect the factorio binary with `checksec`, we get the following:
 
-![checksec](checksec.png)
+![checksec](img/checksec.png)
 
 We are developing the proof of concept exploit on an `amd64` linux machine,
 and are using the **linux native** version of factorio.
 
-The game itself is written in C++ and compiled as a non position independent executable.
-This allows us to hardcode any addresses we need for our exploit without having to worry about ASLR.
+The game itself is written in C++ and compiled as a **non position independent executable**.
+This allows us to hardcode any addresses we need for our exploit,
+without having to worry about ASLR.
+
+As we have an overflow of ~4GB in size, we will overwrite a massive section of the program heap.
+
+The first step is to create a fake save file with modified size specifications,
+filled with a non-repeating pattern.
+Once we preview this save file, factorio will crash with a segmentation fault.
+If we attach a debugger, we can observe the location of the crash:
+
+
 
 
 ## Reporting process
