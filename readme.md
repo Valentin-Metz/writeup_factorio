@@ -2,7 +2,8 @@
 
 In September 2023 we found a buffer overflow vulnerability in Factorio.
 This vulnerability allows for arbitrary code execution when loading or previewing a modified save file.
-A fix has been released with game version 1.1.94 on October 30th 2023.
+We have reported the vulnerability alongside a proof-of-concept to the Factorio team,
+and a fix has been released with game version 1.1.94 on October 30th 2023.
 
 # Factorio
 
@@ -50,7 +51,7 @@ and allocate with malloc and then the `std::get_new_handler` way.
 
 ## The exploit:
 
-We are developing the proof of concept exploit on an `amd64` linux machine,
+We have developed the proof of concept exploit on an `amd64` linux machine,
 and are using the **linux native** version of factorio.
 
 ### Recon:
@@ -99,14 +100,14 @@ Essentially, we will reuse a series of existing instructions in the factorio bin
 [Ropper](https://github.com/sashs/Ropper) reports `638593 gadgets found`.
 
 As we have plenty of space on the chain and don't want to bother ourselves with the libc,
-we will manually execute a syscall.
+we manually execute a syscall.
 
 We need 5 gadgets for the main chain:
 
 1. `0x40e86b: pop rax; ret;` --> load syscall number into `rax`
 2. `0x40e150: pop rdi; ret;` --> load first argument into `rdi`
 3. `0x40e2d4: pop rsi; ret;` --> load second argument into `rsi`
-4. `0x42c4d6: syscall;` --> execute syscall
+4. `0x42c4d6: syscall;` --> execute syscall (`sys_execve` - syscall number `59`)
 5. `0x1c73b08: mov qword ptr [rax], rsi; ret;` --> modify memory (used to specify target program and arguments)
 
 We will execute our target program `get_flag`:
@@ -128,7 +129,3 @@ The jump will now target the pivot gadget,
 which will point the stack pointer at our ret slide -
 placed in the second section of our save file.
 At the end of the ret slide we place the main chain to execute our target program.
-
-## Reporting process:
-
-
