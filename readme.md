@@ -68,13 +68,7 @@ As we have an overflow of ~4GiB in size, we will overwrite a massive section of 
 The first step is to create a fake save file with modified size specifications,
 filled with a [non-repeating pattern](https://en.wikipedia.org/wiki/De_Bruijn_sequence).
 Once we preview this save file, factorio will crash with a segmentation fault.
-If we attach a debugger,
-
-```
-gdb attach (ps aux | grep factorio | grep "x64/factorio" | sed -e 's/  */,/g' | cut -d ',' -f2)
-```
-
-we can observe multiple crashes:
+If we attach a debugger, we can observe multiple crashes, in multiple threads:
 ![music_mixer_thread](img/music_mixer_thread.png)
 This appears to a thread responsible for audio.
 It's attempting to read from an invalid address (we have seeded `rsi` with our pattern).
@@ -85,7 +79,7 @@ The next thread is a worker thread.
 Immediately we notice multiple interesting things:
 
 1. The thread is attempting to execute a jump
-   ![call](img/call.png)
+   ![call](img/jump.png)
 2. The jump target is read from the location pointed at by `rbx + 0x40`
 3. `RBX` is pointing into our pattern --> we control the jump target
    ![rbx](img/rbx.png)
@@ -135,4 +129,6 @@ which will point the stack pointer at our ret slide -
 placed in the second section of our save file.
 At the end of the ret slide we place the main chain to execute our target program.
 
-## Reporting process
+## Reporting process:
+
+
