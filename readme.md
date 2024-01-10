@@ -27,32 +27,40 @@ Most of it seemed pretty sane and uses C++ dynamic sized types.
 
 Reverse engineering a game isn't fundamentally different from a normal binary.
 You open it in a disassembler, attach a debugger, find resources online, and piece stuff together piece by piece.
-At this point a big thanks to the developers for giving us debug symbols,
+At this point a big thanks to the developers for giving us debug symbols;
 although we do recommend that they enable PIE for future builds.
 
-There's not really a lot to say, except that following strings and function names
-into level loading code until I found the part which loads property-trees from
-maps, again it seems sane in that it always tries to allocate enough memory for
-the entire data part.
+Following strings and function names,
+we eventually found the code responsible for loading save files.
+This function loads a [PropertyTree](https://wiki.factorio.com/Property_tree) from a save file.
+In order to be efficient, it allocates enough memory for the entire data section of the file in advance.
 
 ![Screenshot of IDA with the line containing the bug being highlighted](img/bug.png)
 
 ## The bug:
 
-The bug lies within the way this number of bytes to allocate is computed. Because
-the number is cast to a 32-bit integer we can enter a number such that this value
-gets too small (and thus we will be able to overwrite a whole bunch of stuff on the heap)
+The bug lies in way this number of bytes to allocate is computed (see marked line `36`).
 
-Namely this will always give us an overflow of (a multiple of) 4gb.
-However since we only read 4 bytes as size the only way we will overflow if this is
-exactly one byte short of 4 gigabyte. Sadly this means that
-the mapfile also needs to be this big, else the mapdeserializer will complain that
-there simply is not enough data to even attempt deserialization.
+Because the result of `data_length + 1` is cast to a 32-bit unsigned integer,
+we can enter a number that causes a wrap-around to zero after the addition.
+As the deserializer is given a deserialization length of `data_length`,
+it will attempt to read `data_length` bytes into a buffer of size `1`,
+overwriting a massive section of the heap in the process.
 
-There also exists a small piece to implement a custom operator new[] in this C++
-project, which first checks if the size to allocate is zero, if yes it will set it to 1
-(e.g. no allocation will return nullptr), then it will go into a while true to try
-and allocate with malloc and then the `std::get_new_handler` way.
+Specifically, this will always give us an overflow of (a multiple of) 4GiB.
+Since we only read 4 bytes as size,
+the only way we will overflow if this is if we are exactly one byte short of 4 gigabyte.
+Sadly this means that in order for our exploit to work,
+the map file also needs to be exactly this big.
+Otherwise, the MapDeserializer will complain that there is not enough data in order to attempt deserialization.
+
+In case you were wondering why `new[]` with a size of zero does not return a `nullptr`;
+there exists a small piece to implement a custom `operator new[]` in this C++ project,
+which first checks if the size to allocate is zero,
+and if so, sets the allocation size to 1 (i.e. no allocation will return nullptr).
+It will then go into a while true loop,
+where it will first attempt to allocate memory with `malloc`,
+and if that fails, attempt to remedy the situation with `std::get_new_handler`.
 
 ![Screenshot of the new handler in IDA](img/newhandler.png)
 
