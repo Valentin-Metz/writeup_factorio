@@ -5,14 +5,17 @@ This vulnerability allows for arbitrary code execution when loading or previewin
 We have reported the vulnerability alongside a proof-of-concept to the Factorio team,
 and a fix has been released with game version 1.1.94 on October 30th 2023.
 
-# Factorio
+# Factorio:
 
+![factorio](img/factorio-logo.png)
 [Factorio](https://factorio.com/) is a factory automation game.
+It has sold about 3.5 million copies on multiple platforms,
+including Windows, Linux, macOS, the Steam Deck and the Nintendo Switch.
 
 It's very popular among computer science students,
 as it's the best parts of programming without any of the boring/exhausting parts.
 
-## Finding the bug
+## Finding the bug:
 
 Opening factorio in IDA to reverse engineer was just a fun project, but since
 I am very interested in security understanding the parsers was a first goal.
@@ -30,7 +33,7 @@ the entire data part.
 
 ![Screenshot of IDA with the line containing the bug being highlighted](img/bug.png)
 
-## The bug
+## The bug:
 
 The bug lies within the way this number of bytes to allocate is computed. Because
 the number is cast to a 32-bit integer we can enter a number such that this value
@@ -126,6 +129,7 @@ we insert a ret slide which is easier to target than our main chain.
 We place the address of the ret slide and the address of the stack pivot gadget
 in the first section of our savefile in an interleaving, repeating pattern.
 The jump will now target the pivot gadget,
-which will point the stack pointer at our ret slide -
-placed in the second section of our save file.
+which will point the stack pointer at our ret slide.
+We place the ret slide itself in the second section of our save file,
+so that it is loaded at a somewhat predictable location after the binary base.
 At the end of the ret slide we place the main chain to execute our target program.
