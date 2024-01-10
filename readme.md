@@ -1,5 +1,7 @@
 # Abstract
 
+**From save game to remote code execution**
+
 In September 2023 we found a buffer overflow vulnerability in Factorio.
 This vulnerability allows for arbitrary code execution when loading or previewing a modified save file.
 We have reported the vulnerability alongside a proof-of-concept to the Factorio team,
@@ -146,3 +148,11 @@ which will point the stack pointer at our ret slide.
 We place the ret slide itself in the second section of our save file,
 so that it is loaded at a somewhat predictable location after the binary base.
 At the end of the ret slide we place the main chain to execute our target program.
+
+Now, once a modified save file is previewed,
+the game will attempt to load its content to memory,
+overwrite the heap with our data,
+pivot the stack of a waiting worker thread onto our ROP-chain,
+and execute our target program - giving us control over the target machine.
+
+![so_long_and_thanks_for_all_the_fish](img/so-long-and-thanks-for-all-the-fish.png)
