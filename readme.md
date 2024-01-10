@@ -7,7 +7,7 @@ and a fix has been released with game version 1.1.94 on October 30th 2023.
 
 # Factorio:
 
-![factorio](img/factorio-logo.png)
+[![factorio](img/factorio-logo.png)](https://factorio.com/)
 [Factorio](https://factorio.com/) is a factory automation game.
 It has sold about 3.5 million copies on multiple platforms,
 including Windows, Linux, macOS, the Steam Deck and the Nintendo Switch.
