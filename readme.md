@@ -18,16 +18,17 @@ It supports a large online multiplayer and modding community.
 It's very popular among computer science students,
 as it's the best parts of programming without any of the boring/exhausting parts.
 
-## Finding the bug:
+## Exploring the binary:
 
-Opening factorio in IDA to reverse engineer was just a fun project, but since
-I am very interested in security understanding the parsers was a first goal.
+Opening factorio in IDA to reverse engineer was a fun project.
+Since we are interested in security critical aspects,
+understanding the parser was a first goal.
 Most of it seemed pretty sane and uses C++ dynamic sized types.
 
-There's not really a lot to say about how to reverse engineer a game, you open
-it in a disassembler, attach a debugger, find resources online and just piece
-stuff together piece by piece. At this point a big thanks to the developers for
-giving us debug symbols, however they could at least enable PIE.
+Reverse engineering a game isn't fundamentally different from a normal binary.
+You open it in a disassembler, attach a debugger, find resources online, and piece stuff together piece by piece.
+At this point a big thanks to the developers for giving us debug symbols,
+although we do recommend that they enable PIE for future builds.
 
 There's not really a lot to say, except that following strings and function names
 into level loading code until I found the part which loads property-trees from
