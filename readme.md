@@ -9,8 +9,11 @@ and a fix has been released with game version 1.1.94 on October 30th 2023.
 
 [![factorio](img/factorio-logo.png)](https://factorio.com/)
 [Factorio](https://factorio.com/) is a factory automation game.
-It has sold about 3.5 million copies on multiple platforms,
+It has sold about 3.5 million copies on multiple distribution platforms and operating systems;
 including Windows, Linux, macOS, the Steam Deck and the Nintendo Switch.
+
+The game is programmed in C++ in a custom engine.
+It supports a large online multiplayer and modding community.
 
 It's very popular among computer science students,
 as it's the best parts of programming without any of the boring/exhausting parts.
@@ -124,7 +127,8 @@ In addition to the main chain, we need our stack pivot gadget:
 - `0x2043fa4: mov rsp, rcx; ret;`
 
 As the load location of our modified save file is a bit flaky,
-we insert a ret slide which is easier to target than our main chain.
+we insert a ret slide,
+which is easier to target than our main chain.
 
 We place the address of the ret slide and the address of the stack pivot gadget
 in the first section of our savefile in an interleaving, repeating pattern.
